@@ -191,7 +191,7 @@ export class GeminiService {
       }
 
       const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-      return `${downloadLink}&key=${process.env.API_KEY}`;
+      return `${downloadLink}&key=${process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT'}`;
     } catch (error) {
       console.error("Video Generation Error:", error);
       throw error;
