@@ -35,9 +35,9 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
   const [laceStyle, setLaceStyle] = useState('flat');
   const [laceColor, setLaceColor] = useState('white');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
   const [generationStep, setGenerationStep] = useState('');
   const [resultImage, setResultImage] = useState<string | null>(null);
-  const [size, setSize] = useState('1K');
   
   // Interactive 3D Viewer States
   const [rotation, setRotation] = useState({ x: 15, y: -30 });
@@ -74,6 +74,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
   const handleGenerate = async () => {
     if (!prompt) return;
     setIsGenerating(true);
+    setAuthRequired(false);
     setGenerationStep('Initializing Engine...');
     
     try {
@@ -83,7 +84,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
       
       const enrichedPrompt = `${prompt}. The shoe features ${selectedLaceStyle} laces in a vibrant ${selectedLaceColor} color, ${selectedMat} upper.`;
       
-      const steps = ['Mapping Geometry...', 'Baking Textures...', 'Applying Global Illumination...', 'Finalizing Render...'];
+      const steps = ['Optical Pass...', 'Raytracing Surfaces...', 'Finalizing 3D Render...'];
       let stepIdx = 0;
       const stepTimer = setInterval(() => {
         if (stepIdx < steps.length) {
@@ -92,7 +93,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
         }
       }, 3000);
 
-      const url = await gemini.generateShoeDesign(enrichedPrompt, "1:1", size, selectedMat);
+      const url = await gemini.generateShoeDesign(enrichedPrompt, "1:1", selectedMat);
       clearInterval(stepTimer);
       
       if (url) {
@@ -100,11 +101,21 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
         setRotation({ x: 15, y: -30 });
       }
     } catch (error: any) {
-      console.error("Workshop generation failed", error);
-      alert("Design synthesis failed. Please try again later.");
+      if (error.message === 'AUTH_REQUIRED') {
+        setAuthRequired(true);
+      } else {
+        alert("Design synthesis failed. Please try again.");
+      }
     } finally {
       setIsGenerating(false);
       setGenerationStep('');
+    }
+  };
+
+  const handleAuth = async () => {
+    if (typeof window !== 'undefined' && (window as any).aistudio) {
+      await (window as any).aistudio.openSelectKey();
+      setAuthRequired(false);
     }
   };
 
@@ -117,11 +128,11 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
       <div className="flex flex-col items-center text-center mb-16">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-rose-50 rounded-full mb-4 border border-rose-100">
           <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-          <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Digital Artisanal Workshop</span>
+          <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest">3D Digital Workshop</span>
         </div>
         <h2 className="text-5xl font-kids font-bold text-gray-900 mb-4 tracking-tight">The <span className="text-rose-600">Workshop</span></h2>
         <p className="text-gray-500 max-w-2xl text-lg font-medium leading-relaxed">
-          Craft heritage-inspired kicks using our high-fidelity AI render engine. Every design is rendered from scratch based on your unique vision.
+          Craft heritage-inspired kicks with our high-fidelity 3D render engine. Drag to inspect your creation from any angle.
         </p>
       </div>
 
@@ -132,7 +143,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
           
           <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <i className="fa-solid fa-layer-group text-rose-500"></i> Cultural Motif Library
+              <i className="fa-solid fa-layer-group text-rose-500"></i> Cultural Library
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {NEPALI_THEMES.map(theme => (
@@ -152,21 +163,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
 
           <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <i className="fa-solid fa-microchip text-rose-500"></i> Render Quality
-            </h3>
-            <div className="flex">
-              <button
-                disabled
-                className="w-full py-3 rounded-2xl border-2 border-rose-600 bg-rose-50 text-rose-600 font-black text-xs transition-all opacity-100 cursor-default"
-              >
-                1K High Definition (Standard)
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-              <i className="fa-solid fa-lines-leaning text-rose-500"></i> Hardware & Finishes
+              <i className="fa-solid fa-lines-leaning text-rose-500"></i> Detail Finishes
             </h3>
             <div className="flex gap-2 mb-4">
               {LACE_STYLES.map(s => (
@@ -197,7 +194,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe details like: 'Dhaka pattern trim', 'Gold leaf mountain silhouette'..."
+              placeholder="e.g., 'Dhaka pattern trim', 'Gold leaf mountain silhouette'..."
               className="w-full px-6 py-5 rounded-3xl bg-gray-50 border-none focus:ring-2 focus:ring-rose-500 h-32 text-sm font-medium resize-none shadow-inner"
             />
             <button
@@ -207,13 +204,13 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
                 isGenerating ? 'bg-gray-200 text-gray-400' : 'bg-rose-600 hover:bg-rose-700 active:scale-95'
               }`}
             >
-              {isGenerating ? 'SYNTHESIZING...' : 'INITIALIZE RENDER'}
+              {isGenerating ? 'GENERATING RENDER...' : 'INITIALIZE RENDER'}
             </button>
           </div>
         </div>
 
-        {/* Right Column: 3D Stage */}
-        <div className="lg:col-span-7 sticky top-28">
+        {/* Right Column: True 3D Stage */}
+        <div className="lg:col-span-7 sticky top-28" style={{ perspective: '1200px' }}>
           <div 
             ref={containerRef}
             onMouseDown={handleMouseDown}
@@ -221,52 +218,81 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
-            className="relative aspect-square bg-[#050505] rounded-[48px] shadow-2xl overflow-hidden border-8 border-white cursor-grab active:cursor-grabbing preserve-3d"
+            className="relative aspect-square bg-[#0a0a0a] rounded-[48px] shadow-2xl overflow-hidden border-8 border-white cursor-grab active:cursor-grabbing transform-gpu"
+            style={{ transformStyle: 'preserve-3d' }}
           >
+            {/* Ambient Lighting & Lens Flare */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/20 blur-[100px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-sky-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
             {/* Perspective Grid Floor */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
+            <div className="absolute inset-0 z-0 pointer-events-none" style={{ transform: 'translateZ(-100px)' }}>
               <div 
-                 className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[200%] h-[100%] border-t border-rose-500/10"
+                 className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[200%] h-[100%] border-t border-white/5"
                  style={{ 
-                   background: 'linear-gradient(90deg, rgba(225, 29, 72, 0.05) 1px, transparent 1px), linear-gradient(0deg, rgba(225, 29, 72, 0.05) 1px, transparent 1px)',
-                   backgroundSize: '50px 50px',
-                   transform: 'rotateX(80deg) translateY(200px)',
+                   background: 'linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(0deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)',
+                   backgroundSize: '40px 40px',
+                   transform: 'rotateX(80deg) translateY(300px)',
                    transformOrigin: 'bottom'
                  }}
               ></div>
             </div>
 
-            {/* Render Output */}
+            {/* Render Output with Real 3D Transform */}
             <div 
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-full flex items-center justify-center transition-transform duration-300 ease-out will-change-transform"
               style={{
-                transform: `scale(${zoom}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+                transform: `translateZ(50px) scale(${zoom}) rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
                 transformStyle: 'preserve-3d'
               }}
             >
               {resultImage ? (
-                <div className="relative w-[75%] h-[75%] shadow-[0_50px_100px_rgba(0,0,0,0.8)] rounded-[40px] overflow-hidden border border-white/10">
-                  <img src={resultImage} className="w-full h-full object-cover" alt="Rendered Model" />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
+                <div className="relative w-[80%] h-[80%]">
+                   {/* Dynamic Shadow */}
+                  <div 
+                    className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-12 bg-black/60 blur-2xl rounded-full"
+                    style={{ transform: 'rotateX(90deg) translateZ(-50px)' }}
+                  ></div>
+                  
+                  <div className="relative w-full h-full shadow-[0_50px_100px_rgba(0,0,0,0.9)] rounded-[40px] overflow-hidden border border-white/10 group">
+                    <img src={resultImage} className="w-full h-full object-cover" alt="Rendered Model" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50"></div>
+                  </div>
                 </div>
               ) : (
-                <div className="text-center opacity-20 group">
-                  <i className="fa-solid fa-cube text-9xl text-white mb-6 group-hover:scale-110 transition-transform"></i>
-                  <p className="text-white font-black text-xs tracking-[0.5em] uppercase">Stage Ready for Initialization</p>
+                <div className="text-center opacity-10 group">
+                  <i className="fa-solid fa-shoe-prints text-9xl text-white mb-6 group-hover:scale-110 transition-transform"></i>
+                  <p className="text-white font-black text-xs tracking-[1em] uppercase">Stage Initialized</p>
                 </div>
               )}
             </div>
 
+            {/* Recovery HUD for Authorization */}
+            {authRequired && (
+              <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-12 text-center animate-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-rose-600 rounded-3xl flex items-center justify-center mb-8 shadow-2xl shadow-rose-900/50">
+                   <i className="fa-solid fa-key text-white text-3xl"></i>
+                </div>
+                <h4 className="text-2xl font-black text-white mb-4">Authorization Required</h4>
+                <p className="text-gray-400 text-sm mb-8 max-w-xs font-medium">To use the AI synthesis engine, please select a project API key.</p>
+                <button 
+                  onClick={handleAuth}
+                  className="bg-white text-gray-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-600 hover:text-white transition-all active:scale-95 shadow-xl"
+                >
+                  Select API Key
+                </button>
+                <p className="mt-6 text-[10px] text-gray-600 uppercase font-bold tracking-widest">A paid GCP project is required.</p>
+              </div>
+            )}
+
             {/* HUD Loading Overlay */}
             {isGenerating && (
               <div className="absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center">
-                <div className="w-16 h-16 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mb-6"></div>
-                <p className="text-rose-500 font-black tracking-widest uppercase text-xs">{generationStep}</p>
-                <div className="mt-4 flex gap-1">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className={`w-1 h-1 bg-rose-500 rounded-full animate-pulse`} style={{ animationDelay: `${i * 200}ms` }}></div>
-                  ))}
+                <div className="relative w-24 h-24 mb-6">
+                  <div className="absolute inset-0 border-4 border-rose-500/20 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
+                <p className="text-rose-500 font-black tracking-widest uppercase text-xs animate-pulse">{generationStep}</p>
               </div>
             )}
           </div>
@@ -274,14 +300,14 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
           {resultImage && !isGenerating && (
             <div className="mt-8 flex justify-between items-center bg-white p-8 rounded-[32px] border border-gray-100 shadow-xl animate-in slide-in-from-bottom-4 duration-500">
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Configuration Lock</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Workshop Final Price</p>
                 <h4 className="text-2xl font-black text-rose-600">NPR 6,500</h4>
               </div>
               <button 
                 onClick={() => onAddToCart({ prompt, imageUrl: resultImage })}
-                className="bg-gray-900 text-white px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-600 transition-all flex items-center gap-3 active:scale-95"
+                className="bg-gray-900 text-white px-10 py-4 rounded-2xl font-black text-sm hover:bg-rose-600 transition-all flex items-center gap-3 active:scale-95 shadow-lg shadow-gray-200"
               >
-                <i className="fa-solid fa-bag-shopping"></i> Add to Cart
+                <i className="fa-solid fa-bag-shopping"></i> Finish & Add to Cart
               </button>
             </div>
           )}
