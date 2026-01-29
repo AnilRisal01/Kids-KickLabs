@@ -1,0 +1,8 @@
+{
+  "name": "Kids KickLabs - Nepali Inspired Kids Footwear",
+  "description": "A visually stunning e-commerce platform for customizable kids' footwear, blending modern style with rich Nepali cultural heritage. Features AI-powered shoe customization, voice assistance, and interactive design tools.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
