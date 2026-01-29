@@ -34,7 +34,7 @@ export class GeminiService {
     }
 
     // Always initialize a fresh instance before calling to use latest API Key
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' as string });
     
     // Tailored for high-end 3D CAD aesthetic
     const fullPrompt = `A hyper-realistic 3D product render of a professional kid's sneaker. 
@@ -91,7 +91,7 @@ export class GeminiService {
    * Provides reasoning and shopping advice using thinking models.
    */
   async getShoppingAdvice(query: string) {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' as string });
     try {
       const response = await ai.models.generateContent({
         model: "gemini-3-pro-preview",
