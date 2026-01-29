@@ -101,7 +101,7 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
       }
     } catch (error: any) {
       console.error("Workshop generation failed", error);
-      alert("Design synthesis failed. If you selected 2K/4K, please ensure you have a valid API key selected.");
+      alert("Design synthesis failed. Please try again later.");
     } finally {
       setIsGenerating(false);
       setGenerationStep('');
@@ -154,22 +154,14 @@ const Customizer: React.FC<CustomizerProps> = ({ onAddToCart }) => {
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
               <i className="fa-solid fa-microchip text-rose-500"></i> Render Quality
             </h3>
-            <div className="grid grid-cols-3 gap-3">
-              {['1K', '2K', '4K'].map(q => (
-                <button
-                  key={q}
-                  onClick={() => setSize(q)}
-                  className={`py-3 rounded-2xl border font-black text-xs transition-all ${
-                    size === q ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-gray-400 border-gray-100 hover:border-rose-200'
-                  }`}
-                >
-                  {q} {q !== '1K' && ' (Pro)'}
-                </button>
-              ))}
+            <div className="flex">
+              <button
+                disabled
+                className="w-full py-3 rounded-2xl border-2 border-rose-600 bg-rose-50 text-rose-600 font-black text-xs transition-all opacity-100 cursor-default"
+              >
+                1K High Definition (Standard)
+              </button>
             </div>
-            {size !== '1K' && (
-              <p className="mt-3 text-[9px] text-gray-400 font-bold uppercase italic">* Pro rendering requires project-specific API key authorization.</p>
-            )}
           </div>
 
           <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
